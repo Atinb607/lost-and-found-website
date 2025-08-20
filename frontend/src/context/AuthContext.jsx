@@ -28,10 +28,27 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
   };
 
-  const signup = async (name, email, password) => {
-    const { data } = await api.post("/auth/signup", { name, email, password });
-    localStorage.setItem("token", data.token);
-    setUser(data.user);
+  const signup = async (name, roll, email, password) => {
+    console.log("🔐 AuthContext signup called with:");
+    console.log("- name:", name);
+    console.log("- roll:", roll);  
+    console.log("- email:", email);
+    console.log("- password:", password ? "exists" : "missing");
+    
+    try {
+      const requestData = { name, roll, email, password };
+      console.log("📤 Sending signup request with data:", requestData);
+      
+      const response = await api.post("/auth/signup", requestData);
+      
+      console.log("✅ Signup successful:", response.data);
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Signup error:", error);
+      console.error("❌ Error response:", error.response?.data);
+      throw error;
+    }
   };
 
   const logout = async () => {

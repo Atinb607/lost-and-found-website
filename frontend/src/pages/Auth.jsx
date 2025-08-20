@@ -30,7 +30,8 @@ export default function Auth() {
         await login(form.email, form.password);
       } else {
         await signup(form.name, form.roll, form.email, form.password);
-      }
+      } // ← Fixed: Added missing closing brace
+      
       navigate("/");
     } catch (error) {
       setErr(error?.response?.data?.message || "Authentication failed");

@@ -9,10 +9,22 @@ const signToken = (userId) =>
 
 // Signup
 router.post("/signup", async (req, res) => {
+  console.log("🔍 Signup request received");
+  console.log("Request headers:", req.headers);
+  console.log("Request body:", req.body);
+  console.log("Body type:", typeof req.body);
+  
   try {
     const { name, roll, email, password } = req.body || {};
     
+    console.log("Destructured values:");
+    console.log("- name:", name);
+    console.log("- roll:", roll);
+    console.log("- email:", email);
+    console.log("- password:", password ? "exists" : "missing");
+    
     if (!name || !roll || !email || !password) {
+      console.log("❌ Missing fields detected - returning error");
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -29,7 +41,6 @@ router.post("/signup", async (req, res) => {
     }
 
     const user = await User.create({ name, roll, email, password });
-
     const token = signToken(user._id);
 
     res
@@ -40,11 +51,11 @@ router.post("/signup", async (req, res) => {
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
       .json({
-        user: { 
-          id: user._id, 
-          name: user.name, 
-          roll: user.roll, 
-          email: user.email 
+        user: {
+          id: user._id,
+          name: user.name,
+          roll: user.roll,
+          email: user.email
         },
         token
       });
@@ -55,8 +66,8 @@ router.post("/signup", async (req, res) => {
     // Handle duplicate key errors specifically
     if (e.code === 11000) {
       const field = Object.keys(e.keyPattern)[0];
-      return res.status(409).json({ 
-        message: `${field === 'roll' ? 'Roll number' : 'Email'} already exists` 
+      return res.status(409).json({
+        message: `${field === 'roll' ? 'Roll number' : 'Email'} already exists`
       });
     }
     
@@ -64,10 +75,17 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Login (unchanged, but updated response to include roll)
+// Login
 router.post("/login", async (req, res) => {
+  console.log("🔍 Login request received");
+  console.log("Request body:", req.body);
+  
   try {
     const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
@@ -84,22 +102,23 @@ router.post("/login", async (req, res) => {
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
-      .json({ 
-        user: { 
-          id: user._id, 
-          name: user.name, 
-          roll: user.roll, 
-          email: user.email 
-        }, 
-        token 
+      .json({
+        user: {
+          id: user._id,
+          name: user.name,
+          roll: user.roll,
+          email: user.email
+        },
+        token
       });
 
-  } catch {
+  } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// Me (updated to include roll in response)
+// Me (get current user)
 router.get("/me", async (req, res) => {
   try {
     const authHeader = req.headers.authorization?.split(" ")[1];
@@ -112,12 +131,13 @@ router.get("/me", async (req, res) => {
 
     res.json({ user: user || null });
 
-  } catch {
+  } catch (error) {
+    console.error("Me route error:", error);
     res.status(200).json({ user: null });
   }
 });
 
-// Logout (unchanged)
+// Logout
 router.post("/logout", (req, res) => {
   res.clearCookie("token").json({ message: "Logged out" });
 });
