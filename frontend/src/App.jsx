@@ -3,8 +3,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+// Pages
+import Auth from "./pages/Auth";            // ✅ Combined Login/Signup
 import Dashboard from "./pages/Dashboard";
 import ReportItem from "./pages/ReportItem";
 import ItemDetails from "./pages/ItemDetails";
@@ -16,13 +16,36 @@ const App = () => {
       <BrowserRouter>
         <Navbar />
         <Routes>
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/report" element={<ProtectedRoute><ReportItem /></ProtectedRoute>} />
-          <Route path="/items/:id" element={<ProtectedRoute><ItemDetails /></ProtectedRoute>} />
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/report"
+            element={
+              <ProtectedRoute>
+                <ReportItem />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items/:id"
+            element={
+              <ProtectedRoute>
+                <ItemDetails />
+              </ProtectedRoute>
+            }
+          />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          {/* Auth Route (combined login/signup) */}
+          <Route path="/auth" element={<Auth />} />
 
+          {/* Fallback */}
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>
