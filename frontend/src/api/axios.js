@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // Make sure this matches your backend URL
+  baseURL: import.meta.env.VITE_API_BASE || "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,20 +10,18 @@ const api = axios.create({
 
 // Add request interceptor for debugging
 api.interceptors.request.use((config) => {
-  console.log("📤 Making request:", config.method.toUpperCase(), config.url);
-  console.log("📤 Request data:", config.data);
-  console.log("📤 Request headers:", config.headers);
+  console.log("📤 API Request:", config.method.toUpperCase(), config.url);
   return config;
 });
 
 // Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
-    console.log("📥 Response received:", response.status, response.data);
+    console.log("📥 API Response:", response.status, response.data);
     return response;
   },
   (error) => {
-    console.error("📥 Response error:", error.response?.status, error.response?.data);
+    console.error("📥 API Error:", error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );
