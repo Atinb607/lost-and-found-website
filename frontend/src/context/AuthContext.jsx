@@ -1,67 +1,107 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import api from "../api/axios";
+import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../api/axios';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const fetchMe = async () => {
+  // Check for existing token and validate user on app start
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        try {
+          const response = await api.get('/auth/me');
+          if (response.data.user) {
+            setUser(response.data.user);
+          } else {
+            localStorage.removeItem('authToken');
+            delete api.defaults.headers.common['Authorization'];
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          localStorage.removeItem('authToken');
+          delete api.defaults.headers.common['Authorization'];
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const signup = async (name, roll, email, password) => {
     try {
-      const { data } = await api.get("/auth/me");
-      setUser(data.user);
-    } catch {
-      setUser(null);
-    } finally {
-      setInitializing(false);
+      const response = await api.post('/auth/signup', {
+        name,
+        roll,
+        email,
+        password,
+      });
+
+      const { user: userData, token } = response.data;
+
+      // Store token and set in axios headers
+      localStorage.setItem('authToken', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setUser(userData);
+      return response.data;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
     }
   };
 
-  useEffect(() => {
-    fetchMe();
-  }, []);
-
   const login = async (email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("token", data.token);
-    setUser(data.user);
-  };
-
-  const signup = async (name, roll, email, password) => {
-    console.log("🔐 AuthContext signup called with:");
-    console.log("- name:", name);
-    console.log("- roll:", roll);  
-    console.log("- email:", email);
-    console.log("- password:", password ? "exists" : "missing");
-    
     try {
-      const requestData = { name, roll, email, password };
-      console.log("📤 Sending signup request with data:", requestData);
-      
-      const response = await api.post("/auth/signup", requestData);
-      
-      console.log("✅ Signup successful:", response.data);
-      setUser(response.data.user);
+      const response = await api.post('/auth/login', { email, password });
+
+      const { user: userData, token } = response.data;
+
+      // Store token and set in axios headers
+      localStorage.setItem('authToken', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setUser(userData);
       return response.data;
     } catch (error) {
-      console.error("❌ Signup error:", error);
-      console.error("❌ Error response:", error.response?.data);
+      console.error('Login error:', error);
       throw error;
     }
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
-    localStorage.removeItem("token");
-    setUser(null);
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Always clean up local state
+      localStorage.removeItem('authToken');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, initializing, login, signup, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const value = {
+    user,
+    signup,
+    login,
+    logout,
+    loading,
+  };
 
-export const useAuth = () => useContext(AuthContext);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
