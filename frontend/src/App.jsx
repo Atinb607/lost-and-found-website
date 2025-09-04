@@ -1,54 +1,66 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
 // Pages
-import Auth from "./pages/Auth";            // ✅ Combined Login/Signup
+import Auth from "./pages/Auth"; 
 import Dashboard from "./pages/Dashboard";
 import ReportItem from "./pages/ReportItem";
 import ItemDetails from "./pages/ItemDetails";
 import NotFound from "./pages/NotFound";
 
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const hideNavbar = location.pathname === "/auth";
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      {children}
+    </>
+  );
+};
+
 const App = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        <Routes>
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/report"
-            element={
-              <ProtectedRoute>
-                <ReportItem />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/items/:id"
-            element={
-              <ProtectedRoute>
-                <ItemDetails />
-              </ProtectedRoute>
-            }
-          />
+        <Layout>
+          <Routes>
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                <ProtectedRoute>
+                  <ReportItem />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/item/:id"
+              element={
+                <ProtectedRoute>
+                  <ItemDetails />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Auth Route (combined login/signup) */}
-          <Route path="/auth" element={<Auth />} />
+            {/* Auth Route (combined login/signup) */}
+            <Route path="/auth" element={<Auth />} />
 
-          {/* Fallback */}
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" />} />
-        </Routes>
+            {/* Fallback NotFound Page */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
       </BrowserRouter>
     </AuthProvider>
   );
